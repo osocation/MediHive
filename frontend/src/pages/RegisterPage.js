@@ -1,111 +1,138 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { auth, db } from "../firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
-// Helper function to extract role from URL
-const useQuery = () => {
-  return new URLSearchParams(useLocation().search);
-};
-
 const RegisterPage = () => {
-  const query = useQuery();
-  const [role, setRole] = useState(query.get("role") || "patient");
   const [formData, setFormData] = useState({
-    fullName: "",
+    name: "",
     email: "",
     password: "",
+    role: "patient", // Default role
     licenseNumber: "",
-    specialization: "",
     pharmacyName: "",
-    address: "",
-    phoneNumber: "",
-    dateOfBirth: "",
   });
 
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  useEffect(() => {
-    setRole(query.get("role") || "patient");
-  }, [query]);
-
-  // Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle registration
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError("");
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
-      await setDoc(doc(db, "users", user.uid), {
-        fullName: formData.fullName,
+      // Store additional user details in Firestore
+      const userDoc = {
+        uid: user.uid,
+        name: formData.name,
         email: formData.email,
-        role,
-        phoneNumber: formData.phoneNumber || "",
-        dateOfBirth: formData.dateOfBirth || "",
-        licenseNumber: role === "doctor" || role === "pharmacy" ? formData.licenseNumber : "",
-        specialization: role === "doctor" ? formData.specialization : "",
-        pharmacyName: role === "pharmacy" ? formData.pharmacyName : "",
-        address: role === "pharmacy" ? formData.address : "",
-        createdAt: new Date(),
-      });
+        role: formData.role,
+      };
 
-      alert("✅ Registration successful!");
+      if (formData.role === "doctor") {
+        userDoc.licenseNumber = formData.licenseNumber;
+      }
+      if (formData.role === "pharmacy") {
+        userDoc.pharmacyName = formData.pharmacyName;
+      }
+
+      await setDoc(doc(db, "users", user.uid), userDoc);
+
       navigate("/dashboard");
     } catch (error) {
+      setError(error.message);
       console.error("Registration error:", error);
-      alert("⚠️ Registration failed. Try again.");
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="p-6 max-w-md bg-white shadow-md rounded-md">
-        <h2 className="text-xl font-bold mb-4">Register as {role.charAt(0).toUpperCase() + role.slice(1)}</h2>
+        <h2 className="text-xl font-bold mb-4">Register</h2>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        <form onSubmit={handleRegister}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            className="w-full p-2 mb-2 border rounded"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            className="w-full p-2 mb-2 border rounded"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            className="w-full p-2 mb-2 border rounded"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <select
+            name="role"
+            className="w-full p-2 mb-2 border rounded"
+            value={formData.role}
+            onChange={handleChange}
+          >
+            <option value="patient">Patient</option>
+            <option value="doctor">Doctor</option>
+            <option value="pharmacy">Pharmacy</option>
+          </select>
 
-        {/* Role Selection (Disabled if user came from LandingPage) */}
-        <label className="block font-semibold mb-1">Select Role</label>
-        <select 
-          name="role" 
-          value={role} 
-          onChange={(e) => setRole(e.target.value)} 
-          className="w-full p-2 border rounded mb-4"
-          disabled={query.get("role") !== null} // Prevent changing role if preselected
-        >
-          <option value="patient">Patient</option>
-          <option value="doctor">Doctor</option>
-          <option value="pharmacy">Pharmacy</option>
-        </select>
+          {/* Doctor-Specific Field */}
+          {formData.role === "doctor" && (
+            <input
+              type="text"
+              name="licenseNumber"
+              placeholder="Medical License Number"
+              className="w-full p-2 mb-2 border rounded"
+              value={formData.licenseNumber}
+              onChange={handleChange}
+              required
+            />
+          )}
 
-        {/* Common Fields */}
-        <input type="text" name="fullName" placeholder="Full Name" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
-        <input type="email" name="email" placeholder="Email" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
-        <input type="password" name="password" placeholder="Password" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
+          {/* Pharmacy-Specific Field */}
+          {formData.role === "pharmacy" && (
+            <input
+              type="text"
+              name="pharmacyName"
+              placeholder="Pharmacy Name"
+              className="w-full p-2 mb-2 border rounded"
+              value={formData.pharmacyName}
+              onChange={handleChange}
+              required
+            />
+          )}
 
-        {/* Role-Specific Fields */}
-        {role === "doctor" && (
-          <>
-            <input type="text" name="licenseNumber" placeholder="Medical License Number" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
-            <input type="text" name="specialization" placeholder="Specialization (e.g., Cardiology)" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
-          </>
-        )}
-        
-        {role === "pharmacy" && (
-          <>
-            <input type="text" name="pharmacyName" placeholder="Pharmacy Name" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
-            <input type="text" name="licenseNumber" placeholder="Pharmacy License Number" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
-            <input type="text" name="address" placeholder="Pharmacy Address" className="w-full p-2 mb-2 border rounded" onChange={handleChange} required />
-          </>
-        )}
-
-        <button onClick={handleRegister} className="w-full bg-blue-600 text-white p-2 rounded mt-4 hover:bg-blue-700 transition">
-          Register
-        </button>
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white p-2 rounded mt-4 hover:bg-blue-700 transition"
+          >
+            Register
+          </button>
+        </form>
+        <p className="mt-4 text-sm text-center">
+          Already have an account? <a href="/login" className="text-blue-600 underline">Login here</a>.
+        </p>
       </div>
     </div>
   );

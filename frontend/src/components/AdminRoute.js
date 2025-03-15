@@ -5,7 +5,15 @@ import { useAuth } from "../context/AuthContext";
 const AdminRoute = () => {
   const { currentUser } = useAuth();
 
-  return currentUser && currentUser.role === "admin" ? <Outlet /> : <Navigate to="/access-denied" />;
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
+
+  if (currentUser.role !== "admin") {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return <Outlet />;
 };
 
 export default AdminRoute;

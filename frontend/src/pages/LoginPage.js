@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const LoginPage = () => {
@@ -16,8 +17,30 @@ const LoginPage = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      setCurrentUser(user);
-      navigate("/dashboard");
+
+      // Fetch user role from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      let userData = { ...user };
+
+      if (userDoc.exists()) {
+        userData = { ...user, role: userDoc.data().role };
+      }
+
+      console.log("Login Successful:", userData);
+
+      // Set user in context
+      setCurrentUser(userData);
+
+      // Redirect based on role
+      if (userData.role === "admin") {
+        navigate("/admin-dashboard");
+      } else if (userData.role === "doctor") {
+        navigate("/dashboard/doctor");
+      } else if (userData.role === "pharmacy") {
+        navigate("/dashboard/pharmacy");
+      } else {
+        navigate("/dashboard/patient");
+      }
     } catch (error) {
       setError("Invalid email or password.");
       console.error("Login error:", error);
