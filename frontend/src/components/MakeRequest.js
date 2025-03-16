@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebaseConfig';
-import { collection, addDoc, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, Timestamp } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
 const MakeRequest = () => {
@@ -48,7 +48,7 @@ const MakeRequest = () => {
                 doctorId: selectedDoctor,
                 description,
                 status: "Pending",
-                createdAt: new Date()
+                date: Timestamp.now() // Record the current date and time
             });
             setSuccess("Request submitted successfully.");
             setDescription('');

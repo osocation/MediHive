@@ -3,13 +3,10 @@ import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { Route, Routes, Link } from 'react-router-dom'; // Import Link
-import PatientSidebar from "../components/PatientSidebar";
-import DoctorList from '../components/DoctorList';
 import PendingPrescriptions from '../components/PendingPrescriptions';
 import History from '../components/History';
 import PrescriptionDetails from '../components/PrescriptionDetails';
 import MakeRequest from '../components/MakeRequest';
-import PatientStatistics from '../components/PatientStatistics';
 
 const PatientDashboard = () => {
   const { currentUser } = useAuth();
@@ -17,6 +14,9 @@ const PatientDashboard = () => {
   const [requests, setRequests] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [availableDoctors, setAvailableDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,6 +33,9 @@ const PatientDashboard = () => {
           if (isMounted) setPrescriptions(prescriptionsData);
         } catch (error) {
           console.error("Error fetching prescriptions:", error);
+          setError("Failed to load prescriptions.");
+        } finally {
+          setLoading(false);
         }
       }
     };
@@ -59,6 +62,7 @@ const PatientDashboard = () => {
           if (isMounted) setRequests(requestsData);
         } catch (error) {
           console.error("Error fetching requests:", error);
+          setError("Failed to load requests.");
         }
       }
     };
@@ -84,6 +88,7 @@ const PatientDashboard = () => {
         if (isMounted) setAvailableDoctors(doctorsData);
       } catch (error) {
         console.error("Error fetching doctors:", error);
+        setError("Failed to load available doctors.");
       }
     };
 
@@ -113,6 +118,7 @@ const PatientDashboard = () => {
           if (isMounted) setDoctors(assignedDoctorsData);
         } catch (error) {
           console.error("Error fetching assigned doctors:", error);
+          setError("Failed to load assigned doctors.");
         }
       }
     };
@@ -124,12 +130,21 @@ const PatientDashboard = () => {
     };
   }, [currentUser]);
 
-  const handleAddDoctor = async (doctor) => {
-    setDoctors([...doctors, doctor]);
-    const patientRef = doc(db, "users", currentUser.uid);
-    await updateDoc(patientRef, {
-      assignedDoctors: arrayUnion(doctor.id)
-    });
+  const handleSelectDoctor = (event) => {
+    const doctorId = event.target.value;
+    const doctor = availableDoctors.find(doc => doc.id === doctorId);
+    setSelectedDoctor(doctor);
+  };
+
+  const handleAddDoctor = async () => {
+    if (selectedDoctor) {
+      setDoctors([...doctors, selectedDoctor]);
+      const patientRef = doc(db, "users", currentUser.uid);
+      await updateDoc(patientRef, {
+        assignedDoctors: arrayUnion(selectedDoctor.id)
+      });
+      setSelectedDoctor(null); // Reset the selected doctor
+    }
   };
 
   const handleRemoveDoctor = async (doctorId) => {
@@ -146,88 +161,103 @@ const PatientDashboard = () => {
 
   return (
     <div className="patient-dashboard flex">
-      <PatientSidebar />
       <div className="main-content flex-1 p-6 bg-gray-100">
-        <Routes>
-          <Route path="/" element={
-            <>
-              <h1 className="text-3xl font-bold mb-6">Patient Dashboard</h1>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-white shadow-md rounded-lg p-4">
-                  <h2 className="text-xl font-semibold">Total Prescriptions</h2>
-                  <p className="text-2xl">{prescriptions.length}</p>
+        {loading ? (
+          <p>Loading...</p>
+        ) : error ? (
+          <p className="text-red-500">{error}</p>
+        ) : (
+          <Routes>
+            <Route path="/" element={
+              <>
+                <h1 className="text-3xl font-bold mb-6">Patient Dashboard</h1>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-white shadow-md rounded-lg p-4">
+                    <h2 className="text-xl font-semibold">Total Prescriptions</h2>
+                    <p className="text-2xl">{prescriptions.length}</p>
+                  </div>
+                  <div className="bg-white shadow-md rounded-lg p-4">
+                    <h2 className="text-xl font-semibold">Pending Requests</h2>
+                    <p className="text-2xl">{requests.length}</p>
+                  </div>
+                  <div className="bg-white shadow-md rounded-lg p-4">
+                    <h2 className="text-xl font-semibold">Assigned Doctors</h2>
+                    <p className="text-2xl">{doctors.length}</p>
+                  </div>
                 </div>
-                <div className="bg-white shadow-md rounded-lg p-4">
-                  <h2 className="text-xl font-semibold">Pending Requests</h2>
-                  <p className="text-2xl">{requests.length}</p>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <Link to="/dashboard/patient/pending-prescriptions" className="bg-blue-500 text-white rounded-lg p-4 text-center hover:bg-blue-700 transition">
+                    Pending Prescriptions
+                  </Link>
+                  <Link to="/dashboard/patient/history" className="bg-blue-500 text-white rounded-lg p-4 text-center hover:bg-blue-700 transition">
+                    History
+                  </Link>
+                  <Link to="/dashboard/patient/make-request" className="bg-blue-500 text-white rounded-lg p-4 text-center hover:bg-blue-700 transition">
+                    Make Request
+                  </Link>
                 </div>
-                <div className="bg-white shadow-md rounded-lg p-4">
-                  <h2 className="text-xl font-semibold">Assigned Doctors</h2>
-                  <p className="text-2xl">{doctors.length}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <Link to="/dashboard/patient/choose-doctors" className="bg-blue-500 text-white rounded-lg p-4 text-center hover:bg-blue-700 transition">
-                  Choose Doctors
-                </Link>
-                <Link to="/dashboard/patient/pending-prescriptions" className="bg-blue-500 text-white rounded-lg p-4 text-center hover:bg-blue-700 transition">
-                  Pending Prescriptions
-                </Link>
-                <Link to="/dashboard/patient/history" className="bg-blue-500 text-white rounded-lg p-4 text-center hover:bg-blue-700 transition">
-                  History
-                </Link>
-                <Link to="/dashboard/patient/make-request" className="bg-blue-500 text-white rounded-lg p-4 text-center hover:bg-blue-700 transition">
-                  Make Request
-                </Link>
-              </div>
-              <h2 className="text-xl font-semibold mb-4">Your Doctors</h2>
-              {doctors.length === 0 ? (
-                <p>Loading doctors...</p>
-              ) : (
-                <div className="bg-white shadow-md rounded-lg p-4">
-                  <table className="min-w-full border-collapse border border-gray-300">
-                    <thead>
-                      <tr className="bg-gray-200">
-                        <th className="border p-3">Doctor Name</th>
-                        <th className="border p-3">Specialization</th>
-                        <th className="border p-3">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {doctors.length > 0 ? (
-                        doctors.map((doctor) => (
-                          <tr key={doctor.id} className="border-t text-center">
-                            <td className="border p-3">{doctor.name || "N/A"}</td>
-                            <td className="border p-3">{doctor.specialization || "N/A"}</td>
-                            <td className="border p-3">
-                              <button
-                                onClick={() => handleRemoveDoctor(doctor.id)}
-                                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                              >
-                                Remove
-                              </button>
+                <h2 className="text-xl font-semibold mb-4">Your Doctors</h2>
+                {doctors.length === 0 ? (
+                  <p>Loading doctors...</p>
+                ) : (
+                  <div className="bg-white shadow-md rounded-lg p-4">
+                    <table className="min-w-full border-collapse border border-gray-300">
+                      <thead>
+                        <tr className="bg-gray-200">
+                          <th className="border p-3">Doctor Name</th>
+                          <th className="border p-3">Specialization</th>
+                          <th className="border p-3">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {doctors.length > 0 ? (
+                          doctors.map((doctor) => (
+                            <tr key={doctor.id} className="border-t text-center">
+                              <td className="border p-3">{doctor.name || "N/A"}</td>
+                              <td className="border p-3">{doctor.specialization || "N/A"}</td>
+                              <td className="border p-3">
+                                <button
+                                  onClick={() => handleRemoveDoctor(doctor.id)}
+                                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="3" className="p-4 text-center">
+                              No doctors assigned yet.
                             </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="3" className="p-4 text-center">
-                            No doctors assigned yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <h2 className="text-xl font-semibold mb-4 mt-6">Add a Doctor</h2>
+                <div className="mb-4">
+                  <select onChange={handleSelectDoctor} value={selectedDoctor ? selectedDoctor.id : ''} className="p-2 border rounded w-full">
+                    <option value="" disabled>Select a doctor</option>
+                    {filteredAvailableDoctors.map((doctor) => (
+                      <option key={doctor.id} value={doctor.id}>
+                        {doctor.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button onClick={handleAddDoctor} disabled={!selectedDoctor} className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    Add
+                  </button>
                 </div>
-              )}
-            </>
-          } />
-          <Route path="choose-doctors" element={<DoctorList doctors={doctors} availableDoctors={filteredAvailableDoctors} onAddDoctor={handleAddDoctor} onRemoveDoctor={handleRemoveDoctor} patientId={currentUser.uid} />} />
-          <Route path="pending-prescriptions" element={<PendingPrescriptions prescriptions={prescriptions.filter(prescription => prescription.status === "Pending")} />} />
-          <Route path="history" element={<History history={prescriptions.filter(prescription => prescription.status !== "Pending")} requests={requests} />} />
-          <Route path="prescription/:id" element={<PrescriptionDetails />} />
-          <Route path="make-request" element={<MakeRequest />} />
-        </Routes>
+              </>
+            } />
+            <Route path="pending-prescriptions" element={<PendingPrescriptions prescriptions={prescriptions.filter(prescription => prescription.status === "Pending")} />} />
+            <Route path="history" element={<History history={requests} />} /> {/* Ensure History displays patient's requests */}
+            <Route path="prescription/:id" element={<PrescriptionDetails />} />
+            <Route path="make-request" element={<MakeRequest />} />
+          </Routes>
+        )}
       </div>
     </div>
   );

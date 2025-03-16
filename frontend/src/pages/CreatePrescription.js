@@ -1,77 +1,153 @@
-import React, { useState } from "react";
-import { functions } from "../firebaseConfig";
-import { httpsCallable } from "firebase/functions";
+import React, { useEffect, useState } from "react";
+import { db } from "../firebaseConfig";
+import { collection, addDoc, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
+import Select from 'react-select';
 
 const CreatePrescription = () => {
-  const [doctorId, setDoctorId] = useState("");
-  const [patientId, setPatientId] = useState("");
-  const [medication, setMedication] = useState("");
+  const { currentUser } = useAuth();
+  const [patients, setPatients] = useState([]);
+  const [medications, setMedications] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [selectedMedication, setSelectedMedication] = useState(null);
   const [dosage, setDosage] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [status, setStatus] = useState("Pending");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      if (currentUser) {
+        try {
+          const q = query(collection(db, "users"), where("assignedDoctors", "array-contains", currentUser.uid));
+          const querySnapshot = await getDocs(q);
+          const patientsData = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setPatients(patientsData);
+        } catch (error) {
+          console.error("Error fetching patients:", error);
+          setError("Failed to load patients.");
+        }
+      }
+    };
+
+    const fetchMedications = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "medications"));
+        const medicationsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setMedications(medicationsData);
+      } catch (error) {
+        console.error("Error fetching medications:", error);
+        setError("Failed to load medications.");
+      }
+    };
+
+    fetchPatients();
+    fetchMedications();
+  }, [currentUser]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const createPrescription = httpsCallable(functions, "createPrescription");
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    if (!selectedPatient || !selectedMedication) {
+      setError("Please select a patient and a medication.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      await createPrescription({ doctorId, patientId, medication, dosage, instructions });
-      setSuccess("Prescription created successfully!");
-      setError("");
+      await addDoc(collection(db, "prescriptions"), {
+        doctorId: currentUser.uid,
+        patientId: selectedPatient.value,
+        medication: selectedMedication.label,
+        pharmacyId: selectedMedication.pharmacyId, // Include pharmacyId
+        dosage,
+        status,
+        date: Timestamp.now() // Record the current date and time
+      });
+      setSuccess("Prescription created successfully.");
+      setSelectedPatient(null);
+      setSelectedMedication(null);
+      setDosage("");
+      setStatus("Pending");
     } catch (error) {
-      setError("Error creating prescription: " + error.message);
-      setSuccess("");
+      console.error("Error creating prescription:", error);
+      setError("Failed to create prescription. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const patientOptions = patients.map(patient => ({ value: patient.id, label: patient.name }));
+  const medicationOptions = medications.map(medication => ({ value: medication.id, label: medication.name, pharmacyId: medication.pharmacyId }));
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold mb-6">Create Prescription</h1>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      {success && <p className="text-green-500 mb-4">{success}</p>}
+    <div className="create-prescription p-6 bg-white shadow-md rounded-lg">
+      <h3 className="text-2xl font-bold mb-4">Create Prescription</h3>
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Doctor ID"
-          value={doctorId}
-          onChange={(e) => setDoctorId(e.target.value)}
-          className="w-full p-2 mb-2 border rounded"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Patient ID"
-          value={patientId}
-          onChange={(e) => setPatientId(e.target.value)}
-          className="w-full p-2 mb-2 border rounded"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Medication"
-          value={medication}
-          onChange={(e) => setMedication(e.target.value)}
-          className="w-full p-2 mb-2 border rounded"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Dosage"
-          value={dosage}
-          onChange={(e) => setDosage(e.target.value)}
-          className="w-full p-2 mb-2 border rounded"
-          required
-        />
-        <textarea
-          placeholder="Instructions"
-          value={instructions}
-          onChange={(e) => setInstructions(e.target.value)}
-          className="w-full p-2 mb-2 border rounded"
-          required
-        />
-        <button type="submit" className="w-full bg-blue-600 text-white p-2 rounded mt-4 hover:bg-blue-700 transition">
-          Create Prescription
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Select Patient</label>
+          <Select
+            options={patientOptions}
+            value={selectedPatient}
+            onChange={setSelectedPatient}
+            className="w-full"
+            placeholder="Select a patient"
+            isClearable
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Select Medication</label>
+          <Select
+            options={medicationOptions}
+            value={selectedMedication}
+            onChange={setSelectedMedication}
+            className="w-full"
+            placeholder="Select a medication"
+            isClearable
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Dosage</label>
+          <input
+            type="text"
+            value={dosage}
+            onChange={(e) => setDosage(e.target.value)}
+            className="p-2 border rounded w-full"
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Status</label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="p-2 border rounded w-full"
+            required
+          >
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          disabled={loading}
+        >
+          {loading ? "Submitting..." : "Submit"}
         </button>
+        {error && <p className="text-red-500 mt-4">{error}</p>}
+        {success && <p className="text-green-500 mt-4">{success}</p>}
       </form>
     </div>
   );

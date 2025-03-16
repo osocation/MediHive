@@ -7,26 +7,50 @@ import { Link } from "react-router-dom";
 const DoctorPatients = () => {
   const { currentUser } = useAuth();
   const [patients, setPatients] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchPatients = async () => {
-      try {
-        if (currentUser) {
-          const q = query(collection(db, "users"), where("assignedDoctorId", "==", currentUser.uid), where("role", "==", "patient"));
+      if (currentUser) {
+        try {
+          const q = query(collection(db, "users"), where("assignedDoctors", "array-contains", currentUser.uid));
           const querySnapshot = await getDocs(q);
-          const patientsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          const patientsData = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
           setPatients(patientsData);
+        } catch (error) {
+          console.error("Error fetching patients:", error);
+          setError("Failed to load patients.");
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching patients:", error);
-      } finally {
-        setLoading(false);
+      }
+    };
+
+    const fetchRequests = async () => {
+      if (currentUser) {
+        try {
+          const q = query(collection(db, "requests"), where("doctorId", "==", currentUser.uid));
+          const querySnapshot = await getDocs(q);
+          const requestsData = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setRequests(requestsData);
+        } catch (error) {
+          console.error("Error fetching requests:", error);
+          setError("Failed to load requests.");
+        }
       }
     };
 
     fetchPatients();
+    fetchRequests();
   }, [currentUser]);
 
   const filteredPatients = patients.filter((patient) => patient.name.toLowerCase().includes(search.toLowerCase()));
@@ -46,6 +70,8 @@ const DoctorPatients = () => {
 
       {loading ? (
         <p>Loading patients...</p>
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
       ) : patients.length === 0 ? (
         <p>No patients assigned.</p>
       ) : (
@@ -68,6 +94,44 @@ const DoctorPatients = () => {
                   <td className="border p-3">
                     <Link to={`/dashboard/doctor/medical-history/${patient.id}`} className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition">
                       View Medical History
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <h2 className="text-2xl font-bold mt-8 mb-4">Requests</h2>
+      {loading ? (
+        <p>Loading requests...</p>
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
+      ) : requests.length === 0 ? (
+        <p>No requests found.</p>
+      ) : (
+        <div className="bg-white shadow-md rounded-lg p-4">
+          <table className="min-w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-200">
+                <th className="border p-3">Request ID</th>
+                <th className="border p-3">Patient ID</th>
+                <th className="border p-3">Description</th>
+                <th className="border p-3">Status</th>
+                <th className="border p-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((request) => (
+                <tr key={request.id} className="border-t text-center">
+                  <td className="border p-3">{request.id}</td>
+                  <td className="border p-3">{request.patientId}</td>
+                  <td className="border p-3">{request.description}</td>
+                  <td className="border p-3">{request.status}</td>
+                  <td className="border p-3">
+                    <Link to={`/dashboard/doctor/create-prescription?requestId=${request.id}`} className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-700 transition">
+                      Create Prescription
                     </Link>
                   </td>
                 </tr>

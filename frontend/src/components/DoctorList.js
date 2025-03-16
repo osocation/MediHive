@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { db } from '../firebaseConfig';
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 
-const DoctorList = ({ doctors, availableDoctors, onAddDoctor, onRemoveDoctor, patientId }) => {
+const DoctorList = ({ doctors = [], availableDoctors = [], onAddDoctor, onRemoveDoctor, patientId }) => {
     const [selectedDoctor, setSelectedDoctor] = useState(null);
 
     const handleSelectDoctor = (event) => {
@@ -32,13 +32,17 @@ const DoctorList = ({ doctors, availableDoctors, onAddDoctor, onRemoveDoctor, pa
         });
     };
 
+    const filteredAvailableDoctors = availableDoctors.filter(
+        (doctor) => !doctors.some((assignedDoctor) => assignedDoctor.id === doctor.id)
+    );
+
     return (
         <div className="doctor-list p-6 bg-white shadow-md rounded-lg">
             <h3 className="text-2xl font-bold mb-4">Choose Doctors</h3>
             <div className="mb-4">
                 <select onChange={handleSelectDoctor} value={selectedDoctor ? selectedDoctor.id : ''} className="p-2 border rounded w-full">
                     <option value="" disabled>Select a doctor</option>
-                    {availableDoctors.map((doctor) => (
+                    {filteredAvailableDoctors.map((doctor) => (
                         <option key={doctor.id} value={doctor.id}>
                             {doctor.name}
                         </option>
@@ -55,7 +59,6 @@ const DoctorList = ({ doctors, availableDoctors, onAddDoctor, onRemoveDoctor, pa
                         <th className="py-2 px-4 border-b">Name</th>
                         <th className="py-2 px-4 border-b">Email</th>
                         <th className="py-2 px-4 border-b">Specialization</th>
-                        <th className="py-2 px-4 border-b">Pending Prescriptions</th>
                         <th className="py-2 px-4 border-b">Actions</th>
                     </tr>
                 </thead>
@@ -65,7 +68,6 @@ const DoctorList = ({ doctors, availableDoctors, onAddDoctor, onRemoveDoctor, pa
                             <td className="py-2 px-4 border-b">{doctor.name}</td>
                             <td className="py-2 px-4 border-b">{doctor.email}</td>
                             <td className="py-2 px-4 border-b">{doctor.specialization}</td>
-                            <td className="py-2 px-4 border-b">{doctor.pendingPrescriptions}</td>
                             <td className="py-2 px-4 border-b">
                                 <button onClick={() => handleRemoveDoctor(doctor.id)} className="text-red-500 hover:text-red-700 transition">Remove</button>
                             </td>

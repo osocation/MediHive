@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebaseConfig";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
-import AdminSidebar from "../components/AdminSidebar";
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -35,8 +34,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <AdminSidebar />
+      {/* Remove the reference to AdminSidebar */}
 
       {/* Main Content */}
       <div className="flex-1 p-6">
