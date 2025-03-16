@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 const DoctorPatients = () => {
   const { currentUser } = useAuth();
@@ -65,9 +66,9 @@ const DoctorPatients = () => {
                   <td className="border p-3">{patient.email || "N/A"}</td>
                   <td className="border p-3">{patient.phone || "N/A"}</td>
                   <td className="border p-3">
-                    <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition">
-                      View Profile
-                    </button>
+                    <Link to={`/dashboard/doctor/medical-history/${patient.id}`} className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-700 transition">
+                      View Medical History
+                    </Link>
                   </td>
                 </tr>
               ))}

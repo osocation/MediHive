@@ -16,7 +16,7 @@ const DoctorApprovedPrescriptions = () => {
       const q = query(
         collection(db, "prescriptions"),
         where("doctorId", "==", currentUser.uid),
-        where("status", "==", "Pending Pharmacy Approval")
+        where("status", "==", "Approved")
       );
       const snapshot = await getDocs(q);
       setApprovedPrescriptions(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
@@ -44,24 +44,21 @@ const DoctorApprovedPrescriptions = () => {
           <table className="min-w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border p-3">Patient</th>
+                <th className="border p-3">Patient Name</th>
                 <th className="border p-3">Medication</th>
                 <th className="border p-3">Dosage</th>
-                <th className="border p-3">Instructions</th>
-                <th className="border p-3">Status</th>
+                <th className="border p-3">Frequency</th>
+                <th className="border p-3">Pharmacy Status</th>
               </tr>
             </thead>
             <tbody>
               {approvedPrescriptions.map((prescription) => (
                 <tr key={prescription.id} className="border-t text-center">
-                  <td className="border p-3">{prescription.patientName || "Unknown"}</td>
-                  <td className="border p-3">{prescription.medicationName || "Unknown"}</td>
-                  <td className="border p-3">{prescription.dosage}</td>
-                  <td className="border p-3">{prescription.instructions}</td>
-                  <td className={`border p-3 font-semibold 
-                    ${prescription.status === "Pending Pharmacy Approval" ? "text-orange-500" : "text-green-600"}`}>
-                    {prescription.status}
-                  </td>
+                  <td className="border p-3">{prescription.patientName || "N/A"}</td>
+                  <td className="border p-3">{prescription.medication || "N/A"}</td>
+                  <td className="border p-3">{prescription.dosage || "N/A"}</td>
+                  <td className="border p-3">{prescription.frequency || "N/A"}</td>
+                  <td className="border p-3">{prescription.pharmacyStatus || "Pending"}</td>
                 </tr>
               ))}
             </tbody>

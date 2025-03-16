@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 
 const PatientMedicalHistory = () => {
   const { patientId } = useParams();
@@ -34,7 +34,9 @@ const PatientMedicalHistory = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-3xl font-bold mb-6">Patient Medical History</h1>
-
+      <Link to="/dashboard/doctor/patients" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition mb-4 inline-block">
+        Back to Patient List
+      </Link>
       {loading ? (
         <p>Loading history...</p>
       ) : medicalHistory.length === 0 ? (

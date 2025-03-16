@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebaseConfig";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 
-const AvailableMedications = () => {
+const Medications = () => {
   const [medications, setMedications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -10,8 +10,7 @@ const AvailableMedications = () => {
   useEffect(() => {
     const fetchMedications = async () => {
       try {
-        const q = query(collection(db, "medications"), where("status", "==", "available"));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(collection(db, "medications"));
         const medicationsData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
@@ -30,7 +29,7 @@ const AvailableMedications = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-3xl font-bold mb-6">Available Medications</h1>
+      <h1 className="text-3xl font-bold mb-6">Medications</h1>
       {loading ? (
         <p>Loading medications...</p>
       ) : error ? (
@@ -44,6 +43,7 @@ const AvailableMedications = () => {
               <h3 className="text-lg font-bold">{medication.name}</h3>
               <p className="mt-2">Dosage: {medication.dosage}</p>
               <p className="mt-2">Price: ${medication.price}</p>
+              <p className="mt-2">Status: {medication.status}</p>
             </div>
           ))}
         </div>
@@ -52,4 +52,4 @@ const AvailableMedications = () => {
   );
 };
 
-export default AvailableMedications;
+export default Medications;
