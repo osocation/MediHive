@@ -2,27 +2,33 @@ import React, { useEffect, useState } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import DoctorStatistics from '../components/DoctorStatistics'; // Import DoctorStatistics
 
-const RejectedPrescriptions = () => {
-  const { currentUser } = useAuth();
-  const [rejectedPrescriptions, setRejectedPrescriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const DoctorRejectedPrescriptions = () => {
+  const { currentUser } = useAuth(); // Get the current user from AuthContext
+  const [rejectedPrescriptions, setRejectedPrescriptions] = useState([]); // State to store rejected prescriptions
+  const [loading, setLoading] = useState(true); // State to manage loading state
+  const [error, setError] = useState(null); // State to manage error state
 
   useEffect(() => {
+    // Fetch rejected prescriptions for the current doctor
     const fetchRejectedPrescriptions = async () => {
-      try {
-        if (currentUser) {
+      if (currentUser) {
+        try {
+          // Query to get rejected prescriptions for the current doctor
           const q = query(collection(db, "prescriptions"), where("doctorId", "==", currentUser.uid), where("status", "==", "Rejected"));
           const querySnapshot = await getDocs(q);
-          const prescriptionsData = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-          setRejectedPrescriptions(prescriptionsData);
+          const prescriptionsData = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setRejectedPrescriptions(prescriptionsData); // Update state with fetched prescriptions
+        } catch (error) {
+          console.error("Error fetching rejected prescriptions:", error);
+          setError("Failed to fetch rejected prescriptions. Please try again later."); // Set error message
+        } finally {
+          setLoading(false); // Set loading to false after fetching data
         }
-      } catch (error) {
-        console.error("Error fetching rejected prescriptions:", error);
-        setError("Failed to fetch rejected prescriptions. Please try again later.");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -60,7 +66,6 @@ const RejectedPrescriptions = () => {
                 <th className="border p-3">Patient</th>
                 <th className="border p-3">Medication</th>
                 <th className="border p-3">Rejection Reason</th>
-                <th className="border p-3">Pharmacy</th>
                 <th className="border p-3">Actions</th>
               </tr>
             </thead>
@@ -70,7 +75,6 @@ const RejectedPrescriptions = () => {
                   <td className="border p-3">{prescription.patientName || "Unknown"}</td>
                   <td className="border p-3">{prescription.medication || "N/A"}</td>
                   <td className="border p-3">{prescription.rejectionReason || "No reason provided"}</td>
-                  <td className="border p-3">{prescription.pharmacyId || "N/A"}</td>
                   <td className="border p-3">
                     <button
                       onClick={() => handleResubmit(prescription.id)}
@@ -85,8 +89,9 @@ const RejectedPrescriptions = () => {
           </table>
         </div>
       )}
+      <DoctorStatistics prescriptions={rejectedPrescriptions} patients={[]} /> {/* Add DoctorStatistics component */}
     </div>
   );
 };
 
-export default RejectedPrescriptions;
+export default DoctorRejectedPrescriptions;

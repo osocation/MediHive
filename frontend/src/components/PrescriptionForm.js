@@ -3,15 +3,16 @@ import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
+// PrescriptionForm component for creating a new prescription
 const PrescriptionForm = ({ onClose }) => {
-  const { currentUser } = useAuth();
-  const [patients, setPatients] = useState([]);
-  const [medications, setMedications] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState("");
-  const [selectedMedication, setSelectedMedication] = useState("");
-  const [dosage, setDosage] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { currentUser } = useAuth(); // Get the current user from AuthContext
+  const [patients, setPatients] = useState([]); // State to store the list of patients
+  const [medications, setMedications] = useState([]); // State to store the list of medications
+  const [selectedPatient, setSelectedPatient] = useState(""); // State to store the selected patient
+  const [selectedMedication, setSelectedMedication] = useState(""); // State to store the selected medication
+  const [dosage, setDosage] = useState(""); // State to store the dosage
+  const [instructions, setInstructions] = useState(""); // State to store the instructions
+  const [loading, setLoading] = useState(false); // State to manage loading state
 
   useEffect(() => {
     if (!currentUser) return;

@@ -3,9 +3,12 @@ import { db } from "../firebaseConfig";
 import { collection, getDocs, updateDoc, doc, deleteDoc } from "firebase/firestore";
 
 const ManageUsers = () => {
+  // State to store users data
   const [users, setUsers] = useState([]);
+  // State to manage loading state
   const [loading, setLoading] = useState(true);
 
+  // Fetch users from Firestore on component mount
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -25,6 +28,7 @@ const ManageUsers = () => {
     fetchUsers();
   }, []);
 
+  // Handle role change for a user
   const handleRoleChange = async (userId, newRole) => {
     try {
       const userRef = doc(db, "users", userId);
@@ -37,6 +41,7 @@ const ManageUsers = () => {
     }
   };
 
+  // Handle user deletion
   const handleDeleteUser = async (userId) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
@@ -82,7 +87,7 @@ const ManageUsers = () => {
                 <td className="border p-2">
                   <button
                     onClick={() => handleDeleteUser(user.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                   >
                     Delete
                   </button>

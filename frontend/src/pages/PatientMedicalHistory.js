@@ -1,48 +1,46 @@
 import React, { useEffect, useState } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 
+// Component to display patient's medical history
 const PatientMedicalHistory = () => {
-  const { patientId } = useParams();
-  const [medicalHistory, setMedicalHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { patientId } = useParams(); // Get patientId from URL parameters
+  const [medicalHistory, setMedicalHistory] = useState([]); // State to store medical history data
+  const [loading, setLoading] = useState(true); // State to manage loading state
 
   useEffect(() => {
+    // Function to fetch medical history from Firestore
     const fetchMedicalHistory = async () => {
       try {
-        if (!patientId) return;
-        const q = query(collection(db, "medicalHistory"), where("patientId", "==", patientId));
-        const querySnapshot = await getDocs(q);
+        if (!patientId) return; // If no patientId, return early
+        const q = query(collection(db, "medicalHistory"), where("patientId", "==", patientId)); // Query to get medical history for the patient
+        const querySnapshot = await getDocs(q); // Execute the query
 
+        // Map through the query results and format the data
         const historyData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
 
-        setMedicalHistory(historyData);
+        setMedicalHistory(historyData); // Update state with fetched data
       } catch (error) {
-        console.error("Error fetching medical history:", error);
+        console.error("Error fetching medical history:", error); // Log any errors
       } finally {
-        setLoading(false);
+        setLoading(false); // Set loading to false after fetching data
       }
     };
 
-    fetchMedicalHistory();
-  }, [patientId]);
+    fetchMedicalHistory(); // Call the function to fetch medical history
+  }, [patientId]); // Dependency array to re-run effect when patientId changes
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-3xl font-bold mb-6">Patient Medical History</h1>
-      <Link to="/dashboard/doctor/patients" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700 transition mb-4 inline-block">
-        Back to Patient List
-      </Link>
+    <div className="p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-4">Medical History</h2>
       {loading ? (
-        <p>Loading history...</p>
-      ) : medicalHistory.length === 0 ? (
-        <p>No medical history found.</p>
+        <p>Loading medical history...</p> // Show loading message while data is being fetched
       ) : (
-        <div className="bg-white shadow-md rounded-lg p-4">
+        <div className="overflow-x-auto">
           <table className="min-w-full border-collapse border border-gray-300">
             <thead>
               <tr className="bg-gray-200">

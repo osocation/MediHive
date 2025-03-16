@@ -3,18 +3,19 @@ import { db } from "../firebaseConfig";
 import { collection, addDoc, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import Select from 'react-select';
+import DoctorStatistics from '../components/DoctorStatistics'; // Import DoctorStatistics
 
-const CreatePrescription = () => {
-  const { currentUser } = useAuth();
-  const [patients, setPatients] = useState([]);
-  const [medications, setMedications] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [selectedMedication, setSelectedMedication] = useState(null);
-  const [dosage, setDosage] = useState("");
-  const [status, setStatus] = useState("Pending");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+const DoctorCreatePrescription = () => {
+  const { currentUser } = useAuth(); // Get the current user from AuthContext
+  const [patients, setPatients] = useState([]); // State to store patients
+  const [medications, setMedications] = useState([]); // State to store medications
+  const [selectedPatient, setSelectedPatient] = useState(null); // State to store selected patient
+  const [selectedMedication, setSelectedMedication] = useState(null); // State to store selected medication
+  const [dosage, setDosage] = useState(""); // State to store dosage
+  const [status, setStatus] = useState("Pending"); // State to store status
+  const [loading, setLoading] = useState(false); // State to manage loading state
+  const [error, setError] = useState(null); // State to manage error state
+  const [success, setSuccess] = useState(null); // State to manage success state
 
   // Fetch patients and medications when the component mounts
   useEffect(() => {
@@ -152,8 +153,9 @@ const CreatePrescription = () => {
         {error && <p className="text-red-500 mt-4">{error}</p>}
         {success && <p className="text-green-500 mt-4">{success}</p>}
       </form>
+      <DoctorStatistics prescriptions={[]} patients={patients} /> {/* Add DoctorStatistics component */}
     </div>
   );
 };
 
-export default CreatePrescription;
+export default DoctorCreatePrescription;

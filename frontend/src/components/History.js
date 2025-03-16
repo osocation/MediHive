@@ -3,16 +3,18 @@ import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
+// History component to display the request history of the current user
 const History = () => {
-  const { currentUser } = useAuth();
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { currentUser } = useAuth(); // Get the current user from AuthContext
+  const [history, setHistory] = useState([]); // State to store the request history
+  const [loading, setLoading] = useState(true); // State to manage loading state
+  const [error, setError] = useState(null); // State to manage error state
 
   useEffect(() => {
     const fetchHistory = async () => {
       if (currentUser) {
         try {
+          // Query to fetch requests for the current user
           const q = query(collection(db, "requests"), where("patientId", "==", currentUser.uid));
           const querySnapshot = await getDocs(q);
           const historyData = querySnapshot.docs.map((doc) => ({

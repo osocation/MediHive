@@ -4,14 +4,16 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 
+// Main component for displaying doctor's patients and requests
 const DoctorPatients = () => {
-  const { currentUser } = useAuth();
-  const [patients, setPatients] = useState([]);
-  const [requests, setRequests] = useState([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { currentUser } = useAuth(); // Get the current user from AuthContext
+  const [patients, setPatients] = useState([]); // State to store patients
+  const [requests, setRequests] = useState([]); // State to store requests
+  const [search, setSearch] = useState(""); // State for search input
+  const [loading, setLoading] = useState(true); // State to manage loading state
+  const [error, setError] = useState(null); // State to manage error state
 
+  // Fetch patients and requests when the component mounts or currentUser changes
   useEffect(() => {
     const fetchPatients = async () => {
       if (currentUser) {
@@ -53,6 +55,7 @@ const DoctorPatients = () => {
     fetchRequests();
   }, [currentUser]);
 
+  // Filter patients based on search input
   const filteredPatients = patients.filter((patient) => patient.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
@@ -130,7 +133,7 @@ const DoctorPatients = () => {
                   <td className="border p-3">{request.description}</td>
                   <td className="border p-3">{request.status}</td>
                   <td className="border p-3">
-                    <Link to={`/dashboard/doctor/create-prescription?requestId=${request.id}`} className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-700 transition">
+                    <Link to={`/dashboard/doctor/create-prescription/${request.patientId}`} className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-700 transition">
                       Create Prescription
                     </Link>
                   </td>

@@ -12,9 +12,11 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { setCurrentUser } = useAuth();
 
+  // Handle login form submission
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      // Sign in with email and password
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 

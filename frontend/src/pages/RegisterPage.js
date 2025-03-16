@@ -5,6 +5,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
 const RegisterPage = () => {
+  // State to manage form data
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,18 +15,22 @@ const RegisterPage = () => {
     pharmacyName: "",
   });
 
+  // State to manage error messages
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Handle form input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handle form submission
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
+      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const user = userCredential.user;
 
@@ -37,17 +42,22 @@ const RegisterPage = () => {
         role: formData.role,
       };
 
+      // Add doctor-specific field if role is doctor
       if (formData.role === "doctor") {
         userDoc.licenseNumber = formData.licenseNumber;
       }
+      // Add pharmacy-specific field if role is pharmacy
       if (formData.role === "pharmacy") {
         userDoc.pharmacyName = formData.pharmacyName;
       }
 
+      // Save user document in Firestore
       await setDoc(doc(db, "users", user.uid), userDoc);
 
+      // Navigate to dashboard after successful registration
       navigate("/dashboard");
     } catch (error) {
+      // Set error message if registration fails
       setError(error.message);
       console.error("Registration error:", error);
     }

@@ -15,6 +15,7 @@ const AddMedication = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -22,6 +23,7 @@ const AddMedication = () => {
     setSuccess(null);
 
     try {
+      // Add new medication to Firestore
       await addDoc(collection(db, "medications"), {
         name,
         dosage,
@@ -33,6 +35,7 @@ const AddMedication = () => {
         pharmacyName: currentUser.displayName || "Unknown Pharmacy",
       });
       setSuccess("Medication added successfully.");
+      // Reset form fields
       setName("");
       setDosage("");
       setPrice("");

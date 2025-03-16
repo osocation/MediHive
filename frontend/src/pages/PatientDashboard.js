@@ -7,6 +7,7 @@ import PendingPrescriptions from '../components/PendingPrescriptions';
 import History from '../components/History';
 import PrescriptionDetails from '../components/PrescriptionDetails';
 import MakeRequest from '../components/MakeRequest';
+import PatientStatistics from '../components/PatientStatistics'; // Import PatientStatistics
 
 const PatientDashboard = () => {
   const { currentUser } = useAuth();
@@ -21,6 +22,7 @@ const PatientDashboard = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Fetch prescriptions for the current patient
     const fetchPrescriptions = async () => {
       if (currentUser && isMounted) {
         try {
@@ -50,6 +52,7 @@ const PatientDashboard = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Fetch requests for the current patient
     const fetchRequests = async () => {
       if (currentUser && isMounted) {
         try {
@@ -77,6 +80,7 @@ const PatientDashboard = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Fetch available doctors
     const fetchAvailableDoctors = async () => {
       try {
         const q = query(collection(db, "users"), where("role", "==", "doctor"));
@@ -102,6 +106,7 @@ const PatientDashboard = () => {
   useEffect(() => {
     let isMounted = true;
 
+    // Fetch assigned doctors for the current patient
     const fetchAssignedDoctors = async () => {
       if (currentUser && isMounted) {
         try {
@@ -227,9 +232,7 @@ const PatientDashboard = () => {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="3" className="p-4 text-center">
-                              No doctors assigned yet.
-                            </td>
+                            <td colSpan="3" className="border p-3 text-center">No doctors assigned.</td>
                           </tr>
                         )}
                       </tbody>
@@ -250,6 +253,7 @@ const PatientDashboard = () => {
                     Add
                   </button>
                 </div>
+                <PatientStatistics prescriptions={prescriptions} requests={requests} /> {/* Add PatientStatistics component */}
               </>
             } />
             <Route path="pending-prescriptions" element={<PendingPrescriptions prescriptions={prescriptions.filter(prescription => prescription.status === "Pending")} />} />

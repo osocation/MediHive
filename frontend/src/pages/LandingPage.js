@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+// LandingPage component
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">

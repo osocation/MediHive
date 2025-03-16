@@ -4,6 +4,7 @@ import { collection, query, where, getDocs, updateDoc, doc } from "firebase/fire
 import { useAuth } from "../context/AuthContext";
 import Select from 'react-select';
 
+// Component to display pending prescriptions
 const PendingPrescriptions = () => {
     const { currentUser } = useAuth();
     const [prescriptions, setPrescriptions] = useState([]);
@@ -11,6 +12,7 @@ const PendingPrescriptions = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Fetch prescriptions for the current user
     useEffect(() => {
         const fetchPrescriptions = async () => {
             if (currentUser) {
@@ -31,6 +33,7 @@ const PendingPrescriptions = () => {
             }
         };
 
+        // Fetch all pharmacies
         const fetchPharmacies = async () => {
             try {
                 const querySnapshot = await getDocs(collection(db, "pharmacies"));
@@ -49,6 +52,7 @@ const PendingPrescriptions = () => {
         fetchPharmacies();
     }, [currentUser]);
 
+    // Handle pharmacy selection change
     const handlePharmacyChange = async (prescriptionId, selectedPharmacy) => {
         try {
             const prescriptionRef = doc(db, "prescriptions", prescriptionId);

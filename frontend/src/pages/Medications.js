@@ -44,6 +44,7 @@ const Medications = () => {
               <p className="mt-2">Dosage: {medication.dosage}</p>
               <p className="mt-2">Price: ${medication.price}</p>
               <p className="mt-2">Status: {medication.status}</p>
+              <p className="mt-2">Pharmacy ID: {medication.pharmacyId}</p> {/* Add pharmacyId */}
             </div>
           ))}
         </div>

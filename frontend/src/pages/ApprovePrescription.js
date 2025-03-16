@@ -3,28 +3,31 @@ import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
+// Component to approve or reject prescription requests
 const ApprovePrescription = () => {
-  const { currentUser } = useAuth();
-  const [prescriptions, setPrescriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { currentUser } = useAuth(); // Get the current user from AuthContext
+  const [prescriptions, setPrescriptions] = useState([]); // State to store prescriptions
+  const [loading, setLoading] = useState(true); // State to manage loading state
+  const [error, setError] = useState(null); // State to manage error state
 
+  // Fetch prescriptions when the component mounts or when currentUser changes
   useEffect(() => {
     const fetchPrescriptions = async () => {
       if (currentUser) {
         try {
+          // Query to fetch prescriptions with status "Pending Pharmacy Approval"
           const q = query(collection(db, "prescriptions"), where("status", "==", "Pending Pharmacy Approval"));
           const querySnapshot = await getDocs(q);
           const prescriptionsData = querySnapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
           }));
-          setPrescriptions(prescriptionsData);
+          setPrescriptions(prescriptionsData); // Set the fetched prescriptions to state
         } catch (error) {
           console.error("Error fetching prescriptions:", error);
-          setError("Failed to fetch prescriptions. Please try again later.");
+          setError("Failed to fetch prescriptions. Please try again later."); // Set error state if fetching fails
         } finally {
-          setLoading(false);
+          setLoading(false); // Set loading state to false after fetching
         }
       }
     };
@@ -32,23 +35,25 @@ const ApprovePrescription = () => {
     fetchPrescriptions();
   }, [currentUser]);
 
+  // Function to handle approval of a prescription
   const handleApprove = async (id) => {
     try {
-      await updateDoc(doc(db, "prescriptions", id), { status: "fulfilled" });
-      setPrescriptions((prev) => prev.filter((prescription) => prescription.id !== id));
+      await updateDoc(doc(db, "prescriptions", id), { status: "fulfilled" }); // Update prescription status to "fulfilled"
+      setPrescriptions((prev) => prev.filter((prescription) => prescription.id !== id)); // Remove the approved prescription from state
     } catch (error) {
       console.error("Error approving prescription:", error);
-      setError("Failed to approve prescription. Please try again later.");
+      setError("Failed to approve prescription. Please try again later."); // Set error state if approval fails
     }
   };
 
+  // Function to handle rejection of a prescription
   const handleReject = async (id) => {
     try {
-      await updateDoc(doc(db, "prescriptions", id), { status: "rejected" });
-      setPrescriptions((prev) => prev.filter((prescription) => prescription.id !== id));
+      await updateDoc(doc(db, "prescriptions", id), { status: "rejected" }); // Update prescription status to "rejected"
+      setPrescriptions((prev) => prev.filter((prescription) => prescription.id !== id)); // Remove the rejected prescription from state
     } catch (error) {
       console.error("Error rejecting prescription:", error);
-      setError("Failed to reject prescription. Please try again later.");
+      setError("Failed to reject prescription. Please try again later."); // Set error state if rejection fails
     }
   };
 

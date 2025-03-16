@@ -2,18 +2,21 @@ import React, { useEffect, useState, useCallback } from "react";
 import { db } from "../firebaseConfig";
 import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import DoctorStatistics from '../components/DoctorStatistics'; // Import DoctorStatistics
 
-const PendingApprovals = () => {
-  const { currentUser } = useAuth();
-  const [pendingPrescriptions, setPendingPrescriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(null);
-  const [error, setError] = useState(null);
+const DoctorPendingApprovals = () => {
+  const { currentUser } = useAuth(); // Get the current user from AuthContext
+  const [pendingPrescriptions, setPendingPrescriptions] = useState([]); // State to store pending prescriptions
+  const [loading, setLoading] = useState(true); // State to manage loading state
+  const [processing, setProcessing] = useState(null); // Track button loading state
+  const [error, setError] = useState(null); // Add error state
 
+  // Fetch pending prescriptions for the logged-in doctor
   const fetchPendingPrescriptions = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
     try {
+      // Query to get pending prescriptions for the current doctor
       const q = query(
         collection(db, "prescriptions"),
         where("doctorId", "==", currentUser.uid),
@@ -23,7 +26,7 @@ const PendingApprovals = () => {
       setPendingPrescriptions(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
       console.error("Error fetching prescriptions:", error);
-      setError("Failed to fetch pending prescriptions. Please try again later.");
+      setError("Failed to fetch pending prescriptions. Please try again later."); // Set error message
     }
     setLoading(false);
   }, [currentUser]);
@@ -32,26 +35,30 @@ const PendingApprovals = () => {
     fetchPendingPrescriptions();
   }, [fetchPendingPrescriptions]);
 
+  // Approve a prescription
   const handleApprove = async (id) => {
     setProcessing(id);
     try {
+      // Update prescription status to "Pending Pharmacy Approval"
       await updateDoc(doc(db, "prescriptions", id), { status: "Pending Pharmacy Approval" });
       setPendingPrescriptions((prev) => prev.filter((prescription) => prescription.id !== id));
     } catch (error) {
       console.error("Error approving prescription:", error);
-      setError("Failed to approve prescription. Please try again later.");
+      setError("Failed to approve prescription. Please try again later."); // Set error message
     }
     setProcessing(null);
   };
 
+  // Reject a prescription
   const handleReject = async (id) => {
     setProcessing(id);
     try {
+      // Update prescription status to "Rejected by Doctor"
       await updateDoc(doc(db, "prescriptions", id), { status: "Rejected by Doctor" });
       setPendingPrescriptions((prev) => prev.filter((prescription) => prescription.id !== id));
     } catch (error) {
       console.error("Error rejecting prescription:", error);
-      setError("Failed to reject prescription. Please try again later.");
+      setError("Failed to reject prescription. Please try again later."); // Set error message
     }
     setProcessing(null);
   };
@@ -63,7 +70,7 @@ const PendingApprovals = () => {
       {loading ? (
         <p>Loading pending prescriptions...</p>
       ) : error ? (
-        <p className="text-red-500">{error}</p>
+        <p className="text-red-500">{error}</p> // Display error message
       ) : pendingPrescriptions.length === 0 ? (
         <p>No pending prescriptions.</p>
       ) : (
@@ -111,8 +118,9 @@ const PendingApprovals = () => {
           </table>
         </div>
       )}
+      <DoctorStatistics prescriptions={pendingPrescriptions} patients={[]} /> {/* Add DoctorStatistics component */}
     </div>
   );
 };
 
-export default PendingApprovals;
+export default DoctorPendingApprovals;
